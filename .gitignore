@@ -1,0 +1,13 @@
+.env
+__pycache__/
+.ipynb_checkpoints/
+data/raw/
+data/processed/
+data/outputs/
+.venv/
+*.pyc
+.DS_Store
+Thumbs.db
+*.log
+*.zip
+*.rar
