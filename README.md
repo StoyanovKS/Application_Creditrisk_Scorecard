@@ -112,11 +112,14 @@ The model estimates the **probability of default / serious delinquency**:
 PD = P(Y = 1 \mid X)
 \]
 
-where:
+Where:
 
-- \(Y = 1\) means the customer is Bad
-- \(Y = 0\) means the customer is Good
-- \(X\) represents the applicant characteristics
+| Symbol | Description |
+|----------|-------------|
+| \(PD\) | Probability of Default |
+| \(Y = 1\) | Customer is classified as **Bad** (default / serious delinquency) |
+| \(Y = 0\) | Customer is classified as **Good** |
+| \(X\) | Set of applicant characteristics used by the model |
 
 The model can support:
 
@@ -254,17 +257,17 @@ This notebook performs comprehensive data quality checks and profiling of the ra
 | Good (0) | 140,024 | 93.35% |
 | Bad (1) | 9,976 | 6.65% |
 
-**Key Insight**: Highly imbalanced dataset with ~14:1 ratio (Good:Bad). This imbalance requires careful modeling strategies (stratified sampling, appropriate metrics, class weights).
+**Key Insight**: Highly imbalanced dataset with ~14:1 ratio (Good:Bad). This imbalance requires careful modeling strategies.
 
 ### Data Quality Findings
 
 **Missing Values:**
 
-| Variable | Missing Count | Missing % | Action |
-|----------|---------------|-----------|--------|
-| MonthlyIncome | 29,731 | 19.82% | Requires imputation |
-| NumberOfDependents | 3,924 | 2.62% | Requires imputation |
-| All Others | 0 | 0.00% | Complete |
+| Variable | Missing Count | Missing % | 
+|----------|---------------|-----------|
+| MonthlyIncome | 29,731 | 19.82% |
+| NumberOfDependents | 3,924 | 2.62% |
+| All Others | 0 | 0.00% |
 
 **Data Issues Identified:**
 - **Extreme Values**: RevolvingUtilizationOfUnsecuredLines has max of 50,708 (should be ratio 0-1) → Outliers present
@@ -557,13 +560,21 @@ Variable screening identifies predictive variables through Information Value (IV
 
 **IV Interpretation (Standard Credit Scoring Thresholds):**
 
+### Weight of Evidence (WOE)
+
 \[
 WOE_i = \ln\left(\frac{\%Good_i}{\%Bad_i}\right)
 \]
 
+WOE measures the separation between Good and Bad customers within a given bin.
+
+### Information Value (IV)
+
 \[
-IV = \sum_i (\%Good_i - \%Bad_i) \times WOE_i
+IV = \sum_{i} \left(\%Good_i - \%Bad_i\right) \cdot WOE_i
 \]
+
+IV measures the overall predictive strength of a variable by aggregating the discriminatory power of all bins.
 
 | IV Range | Interpretation |
 |---:|---|
@@ -845,16 +856,6 @@ Where:
 
 All 8 final variables were transformed to WOE:
 
-| # | Variable | Binning Status | WOE Status |
-|---|----------|---|---|
-| 1 | RevolvingUtilizationOfUnsecuredLines | ✅ Binned | ✅ Transformed |
-| 2 | age | ✅ Binned | ✅ Transformed |
-| 3 | MonthlyIncome | ✅ Binned | ✅ Transformed |
-| 4 | DebtRatio | ✅ Binned | ✅ Transformed |
-| 5 | NumberOfOpenCreditLinesAndLoans | ✅ Binned | ✅ Transformed |
-| 6 | NumberRealEstateLoansOrLines | ✅ Binned | ✅ Transformed |
-| 7 | NumberOfDependents | ✅ Binned | ✅ Transformed |
-| 8 | NumberOfTimes90DaysLate | ✅ Binned | ✅ Transformed |
 
 ### Transformation Process
 
@@ -932,18 +933,10 @@ Bad rate consistency maintained across datasets:
 **Result:** 8 continuous WOE-transformed features created
 
 **Quality Metrics:**
-- ✅ Complete data: 0 missing values across all datasets
-- ✅ Target preservation: Bad rate identical (6.68%) across train/validation/test
-- ✅ Feature variation: All variables show meaningful WOE ranges
-- ✅ No leakage: Binning fit only on training, applied consistently to all samples
-
-**Ready for Modeling:** WOE datasets now prepared for logistic regression feature selection and model development
-
-### Next Steps
-
-1. **Feature Selection** (Notebook 08): Develop logistic regression and select final model features using WOE variables
-2. **Model Performance** (Notebook 09): Evaluate final model performance metrics
-3. **Scorecard Scaling** (Notebook 10): Transform model scores to business scorecard format
+- Complete data: 0 missing values across all datasets
+- Target preservation: Bad rate identical (6.68%) across train/validation/test
+- Feature variation: All variables show meaningful WOE ranges
+- No leakage: Binning fit only on training, applied consistently to all samples
 
 ---
 
@@ -975,7 +968,6 @@ Highest correlations identified:
 | age | NumberOfDependents | 0.259 | Low-Moderate |
 | MonthlyIncome | DebtRatio | 0.150 | Low |
 | MonthlyIncome | NumberOfOpenCreditLinesAndLoans | 0.125 | Low |
-| ... | ... | ... | ... |
 
 **Key Finding:** No correlations exceed 0.7 threshold
 - **Result**: No variable pairs show problematic redundancy
@@ -994,15 +986,15 @@ Variance Inflation Factor measures how much multicollinearity inflates coefficie
 
 | Variable | VIF | Status |
 |----------|-----|--------|
-| RevolvingUtilizationOfUnsecuredLines | 1.396 | ✅ Excellent |
-| age | 1.200 | ✅ Excellent |
-| NumberOfTimes90DaysLate | 1.199 | ✅ Excellent |
-| NumberOfOpenCreditLinesAndLoans | 1.191 | ✅ Excellent |
-| NumberOfDependents | 1.134 | ✅ Excellent |
-| NumberRealEstateLoansOrLines | 1.125 | ✅ Excellent |
-| DebtRatio | 1.105 | ✅ Excellent |
-| MonthlyIncome | 1.095 | ✅ Excellent |
-| **Maximum VIF** | **1.396** | ✅ **No Multicollinearity Detected** |
+| RevolvingUtilizationOfUnsecuredLines | 1.396 | Excellent |
+| age | 1.200 | Excellent |
+| NumberOfTimes90DaysLate | 1.199 | Excellent |
+| NumberOfOpenCreditLinesAndLoans | 1.191 | Excellent |
+| NumberOfDependents | 1.134 | Excellent |
+| NumberRealEstateLoansOrLines | 1.125 | Excellent |
+| DebtRatio | 1.105 | Excellent |
+| MonthlyIncome | 1.095 | Excellent |
+| **Maximum VIF** | **1.396** | **No Multicollinearity Detected** |
 
 **Interpretation:** All VIF values far below 5.0 threshold - no multicollinearity concerns
 
@@ -1024,15 +1016,15 @@ Variance Inflation Factor measures how much multicollinearity inflates coefficie
 
 | Variable | Coefficient | Std Error | Z-Statistic | P-Value | Status |
 |----------|-------------|-----------|------------|---------|--------|
-| Intercept | -2.637 | 0.016 | -162.8 | < 0.001 | ✅ |
-| **RevolvingUtilizationOfUnsecuredLines** | **-0.739** | 0.016 | -46.8 | **< 0.001** | ✅ **Highly Sig.** |
-| **age** | **-0.399** | 0.033 | -12.0 | **< 0.001** | ✅ **Highly Sig.** |
-| **MonthlyIncome** | **-0.189** | 0.056 | -3.4 | **0.001** | ✅ **Sig.** |
-| **DebtRatio** | **-0.890** | 0.052 | -17.2 | **< 0.001** | ✅ **Highly Sig.** |
-| **NumberOfOpenCreditLinesAndLoans** | **+0.259** | 0.051 | +5.0 | **< 0.001** | ✅ **Highly Sig.** |
-| **NumberRealEstateLoansOrLines** | **-0.613** | 0.063 | -9.8 | **< 0.001** | ✅ **Highly Sig.** |
-| **NumberOfDependents** | **-0.391** | 0.086 | -4.5 | **< 0.001** | ✅ **Highly Sig.** |
-| **NumberOfTimes90DaysLate** | **-0.724** | 0.014 | -53.1 | **< 0.001** | ✅ **Highly Sig.** |
+| Intercept | -2.637 | 0.016 | -162.8 | < 0.001 | **Highly Sig.**  |
+| **RevolvingUtilizationOfUnsecuredLines** | **-0.739** | 0.016 | -46.8 | **< 0.001** | **Highly Sig.** |
+| **age** | **-0.399** | 0.033 | -12.0 | **< 0.001** | **Highly Sig.** |
+| **MonthlyIncome** | **-0.189** | 0.056 | -3.4 | **0.001** | **Sig.** |
+| **DebtRatio** | **-0.890** | 0.052 | -17.2 | **< 0.001** | **Highly Sig.** |
+| **NumberOfOpenCreditLinesAndLoans** | **+0.259** | 0.051 | +5.0 | **< 0.001** | **Highly Sig.** |
+| **NumberRealEstateLoansOrLines** | **-0.613** | 0.063 | -9.8 | **< 0.001** | **Highly Sig.** |
+| **NumberOfDependents** | **-0.391** | 0.086 | -4.5 | **< 0.001** | **Highly Sig.** |
+| **NumberOfTimes90DaysLate** | **-0.724** | 0.014 | -53.1 | **< 0.001** | **Highly Sig.** |
 
 ### Variable Significance Assessment
 
@@ -1040,14 +1032,14 @@ Variance Inflation Factor measures how much multicollinearity inflates coefficie
 
 | Variable | Interpretation | Strength |
 |----------|---|---|
-| **RevolvingUtilizationOfUnsecuredLines** | Higher utilization increases delinquency risk | Z=-46.8 ✅ Strongest |
-| **NumberOfTimes90DaysLate** | Past 90+ day delinquency strong future risk indicator | Z=-53.1 ✅ Strongest |
-| **DebtRatio** | Higher debt relative to income increases risk | Z=-17.2 ✅ Very Strong |
-| **NumberRealEstateLoansOrLines** | More real estate loans protective (lower risk) | Z=-9.8 ✅ Strong |
-| **age** | Age protective effect (older = lower risk) | Z=-12.0 ✅ Very Strong |
-| **NumberOfDependents** | More dependents protective (lower risk) | Z=-4.5 ✅ Moderate |
-| **MonthlyIncome** | Higher income reduces delinquency risk | Z=-3.4 ✅ Significant |
-| **NumberOfOpenCreditLinesAndLoans** | More open lines increases risk (WOE effect) | Z=+5.0 ✅ Significant |
+| **RevolvingUtilizationOfUnsecuredLines** | Higher utilization increases delinquency risk | Z=-46.8  Strongest |
+| **NumberOfTimes90DaysLate** | Past 90+ day delinquency strong future risk indicator | Z=-53.1   Strongest |
+| **DebtRatio** | Higher debt relative to income increases risk | Z=-17.2 Very Strong |
+| **NumberRealEstateLoansOrLines** | More real estate loans protective (lower risk) | Z=-9.8 Strong |
+| **age** | Age protective effect (older = lower risk) | Z=-12.0 Very Strong |
+| **NumberOfDependents** | More dependents protective (lower risk) | Z=-4.5 Moderate |
+| **MonthlyIncome** | Higher income reduces delinquency risk | Z=-3.4 Significant |
+| **NumberOfOpenCreditLinesAndLoans** | More open lines increases risk (WOE effect) | Z=+5.0  Significant |
 
 ### Coefficient Interpretation
 
@@ -1082,14 +1074,14 @@ Variance Inflation Factor measures how much multicollinearity inflates coefficie
 
 | Variable | Correlation | VIF | Significance | Decision |
 |----------|-------------|-----|--------------|----------|
-| RevolvingUtilizationOfUnsecuredLines | ✅ Low | ✅ 1.40 | ✅ p < 0.001 | **RETAIN** |
-| age | ✅ Low | ✅ 1.20 | ✅ p < 0.001 | **RETAIN** |
-| MonthlyIncome | ✅ Low | ✅ 1.09 | ✅ p = 0.001 | **RETAIN** |
-| DebtRatio | ✅ Low | ✅ 1.11 | ✅ p < 0.001 | **RETAIN** |
-| NumberOfOpenCreditLinesAndLoans | ✅ Low | ✅ 1.19 | ✅ p < 0.001 | **RETAIN** |
-| NumberRealEstateLoansOrLines | ✅ Low | ✅ 1.13 | ✅ p < 0.001 | **RETAIN** |
-| NumberOfDependents | ✅ Low | ✅ 1.13 | ✅ p < 0.001 | **RETAIN** |
-| NumberOfTimes90DaysLate | ✅ Low | ✅ 1.20 | ✅ p < 0.001 | **RETAIN** |
+| RevolvingUtilizationOfUnsecuredLines |  Low |  1.40 |  p < 0.001 | **RETAIN** |
+| age | Low |  1.20 |  p < 0.001 | **RETAIN** |
+| MonthlyIncome |  Low |  1.09 |  p = 0.001 | **RETAIN** |
+| DebtRatio |  Low |  1.11 |  p < 0.001 | **RETAIN** |
+| NumberOfOpenCreditLinesAndLoans |  Low |  1.19 |  p < 0.001 | **RETAIN** |
+| NumberRealEstateLoansOrLines |  Low |  1.13 |  p < 0.001 | **RETAIN** |
+| NumberOfDependents |  Low |  1.13 |  p < 0.001 | **RETAIN** |
+| NumberOfTimes90DaysLate |  Low |  1.20 |  p < 0.001 | **RETAIN** |
 
 ### Selection Rationale
 
@@ -1125,22 +1117,12 @@ Variance Inflation Factor measures how much multicollinearity inflates coefficie
 
 **All Other Candidate Variables**: Retained due to statistical significance, low multicollinearity, and business value
 
-### Model Readiness
-
-**Final Logistic Regression Model:**
+### Final Logistic Regression Model
 - 8 predictors (WOE-transformed)
 - 90,000 training samples
 - Pseudo R² = 0.2148
 - All coefficients significant (p < 0.01)
 - No multicollinearity (max VIF = 1.396)
-
-**Status: Ready for performance evaluation and scorecard development**
-
-### Next Steps
-
-1. **Model Performance** (Notebook 09): Evaluate AUC, Gini, KS statistic on validation/test data
-2. **Scorecard Scaling** (Notebook 10): Transform logistic regression scores to credit scorecard
-3. **Cutoff Determination** (Notebook 11): Determine optimal approval threshold
 
 ---
 
@@ -1190,12 +1172,12 @@ AUROC measures model's ability to rank-order customers by risk (discriminatory p
 | **Train** | **0.8300** | Excellent |
 | **Validation** | **0.8283** | Excellent |
 | **Test** | **0.8283** | Excellent |
-| **Δ (Train-Test)** | **0.0017** | ✅ Negligible |
+| **Δ (Train-Test)** | **0.0017** | Negligible |
 
 **AUROC Interpretation:**
 - **0.50**: Random model (no discriminatory power)
 - **0.70-0.80**: Good discrimination
-- **0.80-0.90**: Excellent discrimination  ← **Our Model**
+- **0.80-0.90**: Excellent discrimination  ← **falls_here**
 - **0.90+**: Outstanding discrimination
 
 **Finding:** Model demonstrates excellent and stable discriminatory power across all samples with virtually no overfitting (train-test difference = 0.17%)
@@ -1214,12 +1196,12 @@ Gini (also called Gini Index) = 2 × AUROC - 1. Measures concentration of predic
 
 **Gini Interpretation:**
 - **Gini = 0%**: Random model
-- **Gini > 60%**: Excellent model  ← **Our Model**
+- **Gini > 60%**: Excellent model  ← **falls_here**
 - **Gini > 70%**: Outstanding model
 
 **Industry Benchmarks:** 
 - Retail credit scorecard: typically 40-60% Gini
-- High-quality scorecard: 60-70% Gini  ← **Our Performance**
+- High-quality scorecard: 60-70% Gini  ← **falls_here**
 
 **Finding:** Gini of 65.6% indicates very high-quality credit scorecard, substantially better than typical retail credit models
 
@@ -1231,7 +1213,7 @@ KS statistic measures maximum separation between cumulative distributions of Goo
 
 | Metric | Value | Interpretation |
 |--------|-------|---|
-| **KS Statistic** | **51.5%** | ✅ **Excellent** |
+| **KS Statistic** | **51.5%** | **Excellent** |
 | Threshold | > 40% | Very Good |
 | Threshold | > 30% | Good |
 | Threshold | > 20% | Adequate |
@@ -1249,11 +1231,11 @@ KS statistic measures maximum separation between cumulative distributions of Goo
 
 | Metric | Train | Validation | Test | Status |
 |--------|-------|-----------|------|--------|
-| AUROC | 0.8300 | 0.8283 | 0.8283 | ✅ Stable |
-| Gini | 66.0% | 65.6% | 65.6% | ✅ Stable |
-| KS (Validation) | — | 51.5% | — | ✅ Excellent |
+| AUROC | 0.8300 | 0.8283 | 0.8283 | Stable |
+| Gini | 66.0% | 65.6% | 65.6% | Stable |
+| KS (Validation) | — | 51.5% | — | Excellent |
 | Sample Size | 90,000 | 30,000 | 30,000 | — |
-| Bad Rate | 6.68% | 6.68% | 6.68% | ✅ Consistent |
+| Bad Rate | 6.68% | 6.68% | 6.68% | Consistent |
 
 ### Overfitting Analysis
 
@@ -1261,9 +1243,9 @@ KS statistic measures maximum separation between cumulative distributions of Goo
 
 | Comparison | AUROC Difference | Gini Difference | Result |
 |-----------|--|--|---|
-| Train vs Validation | 0.0017 | 0.0034 | ✅ Negligible |
-| Validation vs Test | 0.0000 | 0.0000 | ✅ Perfect |
-| Train vs Test | 0.0017 | 0.0034 | ✅ Negligible |
+| Train vs Validation | 0.0017 | 0.0034 | Negligible |
+| Validation vs Test | 0.0000 | 0.0000 | Perfect |
+| Train vs Test | 0.0017 | 0.0034 | Negligible |
 
 **Conclusion:** 
 - No evidence of overfitting
@@ -1283,6 +1265,99 @@ For illustration, using a 10% Probability of Default threshold for approval/reje
 | Actual Bad | 112 | 222 | 334 |
 | Total | 25,347 | 4,653 | 30,000 |
 
+Confusion Matrix Metrics
+
+Used for operational decision analysis.
+
+### Accuracy
+
+Formula:
+
+```text
+(TP + TN) / Total
+```
+
+Can be misleading in imbalanced datasets.
+
+### Precision
+
+Formula:
+
+```text
+TP / (TP + FP)
+```
+
+Meaning:
+
+Of all customers predicted as Bad, how many were actually Bad.
+
+Low Precision may indicate excessive rejection of Good customers.
+
+### Recall
+
+Formula:
+
+```text
+TP / (TP + FN)
+```
+
+Meaning:
+
+How many actual Bad customers are captured.
+
+Credit risk interpretation:
+
+Low Recall means risky customers are being approved.
+
+This is usually the most critical classification metric in scorecard development.
+
+### Specificity
+
+Formula:
+
+```text
+TN / (TN + FP)
+```
+
+Meaning:
+
+Ability to correctly identify Good customers.
+
+Low Specificity may indicate excessive rejection of profitable business.
+
+### F1 Score
+
+Harmonic mean of Precision and Recall.
+
+Useful when balancing:
+
+- Risk capture
+- Customer approval
+
+---
+
+
+
+
+Interpretation:
+
+- The model has strong discriminatory power.
+- Train, validation and test performance are almost identical.
+- There is no evidence of overfitting.
+
+---
+
+
+
+Confusion matrix categories:
+
+| Category | Meaning | Business Interpretation |
+|---|---|---|
+| True Negative | Good customer predicted as Good | Correct approval |
+| False Positive | Good customer predicted as Bad | Lost good customer / unnecessary rejection |
+| False Negative | Bad customer predicted as Good | Risky customer incorrectly approved |
+| True Positive | Bad customer predicted as Bad | Correct rejection of risky customer |
+
 **Classification Metrics:**
 
 | Metric | Value | Interpretation |
@@ -1296,34 +1371,26 @@ For illustration, using a 10% Probability of Default threshold for approval/reje
 **Classification Interpretation:**
 
 At 10% PD cutoff:
-- ✅ **High Specificity (85.1%)**: Model correctly identifies 85% of good customers → low approval rate
-- ✅ **Moderate Recall (66.5%)**: Model catches 67% of bad customers → reasonable bad customer detection
-- ⚠️ **Low Precision (4.8%)**: Expected in imbalanced dataset (6.68% bad rate); many good customers score above 10% PD
+- **High Specificity (85.1%)**: Model correctly identifies 85% of good customers → low approval rate
+- **Moderate Recall (66.5%)**: Model catches 67% of bad customers → reasonable bad customer detection
+- **Low Precision (4.8%)**: Expected in imbalanced dataset (6.68% bad rate); many good customers score above 10% PD
 - **Rationale**: This conservative threshold prioritizes risk detection over approval volume; suitable for risk-averse policy
 
-### Model Readiness
+### Performance Assessment
 
-**Performance Assessment:**
+**Excellent Discriminatory Power** (AUROC = 0.828, Gini = 65.6%)
+**Stable Across Samples** (Train/Val/Test metrics virtually identical)  
+**No Overfitting** (Perfect generalization to unseen data)
+**Good Bad Customer Detection** (Recall = 66.5% at 10% cutoff)
+**Industry-Leading Quality** (Gini 65.6% exceeds typical retail models)
 
-✅ **Excellent Discriminatory Power** (AUROC = 0.828, Gini = 65.6%)
-✅ **Stable Across Samples** (Train/Val/Test metrics virtually identical)  
-✅ **No Overfitting** (Perfect generalization to unseen data)
-✅ **Good Bad Customer Detection** (Recall = 66.5% at 10% cutoff)
-✅ **Industry-Leading Quality** (Gini 65.6% exceeds typical retail models)
 
-**Status: Model approved for scorecard scaling and cutoff optimization**
 
 ### Output Files Generated
 
 - `data/processed/train_scoring.csv` (90K records with PD scores)
 - `data/processed/validation_scoring.csv` (30K records with PD scores)  
 - `data/processed/test_scoring.csv` (30K records with PD scores)
-
-### Next Steps
-
-1. **Scorecard Scaling** (Notebook 10): Convert PD probabilities to 300-850 credit scorecard
-2. **Cutoff Determination** (Notebook 11): Optimize approval threshold based on business strategy
-3. **Score Run & Fit** (Notebook 12): Final validation on holdout test set
 
 ---
 
@@ -1482,12 +1549,12 @@ Each record includes:
 
 **Advantages of This Scorecard:**
 
-✅ **Intuitive Scale**: 300-850 range familiar to credit professionals
-✅ **Monotonic**: Higher score = lower risk (always consistent)
-✅ **Business Friendly**: Easy to explain (PDO concept)
-✅ **Implementable**: Simple formula for deployment
-✅ **Stable**: Based on stable WOE transformation
-✅ **Comprehensive**: Captures 8 key credit risk dimensions
+**Intuitive Scale**: 300-850 range familiar to credit professionals
+**Monotonic**: Higher score = lower risk (always consistent)
+**Business Friendly**: Easy to explain (PDO concept)
+**Implementable**: Simple formula for deployment
+**Stable**: Based on stable WOE transformation
+**Comprehensive**: Captures 8 key credit risk dimensions
 
 **Score Interpretation for Decisions:**
 
@@ -1514,12 +1581,6 @@ The scoring formula simply provides:
 1. More intuitive communication format
 2. Easier implementation in business systems
 3. Better stakeholder understanding
-
-### Next Steps
-
-1. **Cutoff Determination** (Notebook 11): Optimize score threshold for approval decisions
-2. **Score Run & Fit** (Notebook 12): Final validation on holdout test set
-3. **Monitoring** (Notebook 13): Establish ongoing performance tracking
 
 ---
 
@@ -1551,17 +1612,17 @@ Demonstrates perfect monotonic risk ordering across all deciles.
 
 **Decile Findings:**
 
-✅ **Perfect Risk Separation:**
+   **Perfect Risk Separation:**
 - Lowest-risk decile (D1): 0.63% bad rate
 - Highest-risk decile (D10): 31.7% bad rate
 - **Ratio: 50× risk differential** between best and worst deciles
 
-✅ **Lift Analysis:**
+   **Lift Analysis:**
 - Top 3 deciles: 10.6×, 7.0×, 4.4× lift over average
 - Bottom 3 deciles: 0.8×, 0.5×, 0.2× (well below average)
 - Scorecard effectively segments portfolio by risk
 
-✅ **Monotonic Ordering:**
+   **Monotonic Ordering:**
 - Bad rate strictly increases moving down score scale
 - PD and bad rate perfectly aligned across all deciles
 - No anomalies or reversals in risk ordering
@@ -1603,21 +1664,21 @@ Approval/rejection policy tested at multiple score cutoffs:
 
 **Operational Implications at Cutoff = 600:**
 
-✅ **Approval Volume**: 65.6% of applicants approved
+   **Approval Volume**: 65.6% of applicants approved
 - Sufficient volume for growth targets
 - Reduces collection and manual work vs. lower cutoffs
 
-✅ **Portfolio Quality**: 1.93% bad rate among approved
+   **Portfolio Quality**: 1.93% bad rate among approved
 - Significant improvement vs. 6.68% overall bad rate
 - 73% reduction in accepted bad rate relative to average
 - Risk-optimized approval policy
 
-✅ **Bad Customer Detection**: 81.1% bad capture rate
+   **Bad Customer Detection**: 81.1% bad capture rate
 - Catches majority of delinquent customers
 - Rejects most problematic segment
 - Retains manual review for borderline cases
 
-✅ **Business Flexibility**: Manual review tier (580-600)
+   **Business Flexibility**: Manual review tier (580-600)
 - Allows underwriting override for relationship lending
 - Captures ~19% of applicants for judgment-based decisions
 - Balances automated decision speed with flexibility
@@ -1633,9 +1694,9 @@ Approval/rejection policy tested at multiple score cutoffs:
 | Test | 65.53% | 1.98% | 80.60% |
 
 **Finding:** Metrics perfectly consistent across train/validation/test
-- ✅ No overfitting in cutoff analysis
-- ✅ Stable across independent samples
-- ✅ Reliable for implementation
+- No overfitting in cutoff analysis
+- Stable across independent samples
+- Reliable for implementation
 
 ### Score Distribution at Selected Cutoff
 
@@ -1807,221 +1868,9 @@ A well-calibrated model produces predicted risk levels that closely match realis
 
 ---
 
-# Confusion Matrix Metrics
+# 
 
-Used for operational decision analysis.
 
-### Accuracy
-
-Formula:
-
-```text
-(TP + TN) / Total
-```
-
-Can be misleading in imbalanced datasets.
-
-### Precision
-
-Formula:
-
-```text
-TP / (TP + FP)
-```
-
-Meaning:
-
-Of all customers predicted as Bad, how many were actually Bad.
-
-Low Precision may indicate excessive rejection of Good customers.
-
-### Recall
-
-Formula:
-
-```text
-TP / (TP + FN)
-```
-
-Meaning:
-
-How many actual Bad customers are captured.
-
-Credit risk interpretation:
-
-Low Recall means risky customers are being approved.
-
-This is usually the most critical classification metric in scorecard development.
-
-### Specificity
-
-Formula:
-
-```text
-TN / (TN + FP)
-```
-
-Meaning:
-
-Ability to correctly identify Good customers.
-
-Low Specificity may indicate excessive rejection of profitable business.
-
-### F1 Score
-
-Harmonic mean of Precision and Recall.
-
-Useful when balancing:
-
-- Risk capture
-- Customer approval
-
----
-
-# GitHub Safety
-
-Current .gitignore is generally safe.
-
-Recommended additions:
-
-```gitignore
-*.pyc
-.DS_Store
-Thumbs.db
-*.log
-*.xlsx
-*.csv
-*.rar
-*.zip
-```
-
-## Logistic Regression Model
-
-The final model is a logistic regression model estimated on WOE-transformed variables.
-
-The logistic model estimates:
-
-\[
-\log\left(\frac{PD}{1-PD}\right) = \beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_kX_k
-\]
-
-where:
-
-- \(PD\) = probability of serious delinquency
-- \(X_i\) = WOE-transformed predictor
-- \(\beta_i\) = model coefficient
-
-The probability is obtained as:
-
-\[
-PD = \frac{1}{1 + e^{-z}}
-\]
-
-where:
-
-\[
-z = \beta_0 + \beta_1X_1 + ... + \beta_kX_k
-\]
-
-All final model variables were statistically significant.
-
-### Multicollinearity Check
-
-Variance Inflation Factor was used to check multicollinearity.
-
-| VIF Range | Interpretation |
-|---:|---|
-| < 2 | Excellent |
-| 2 - 5 | Acceptable |
-| 5 - 10 | Review |
-| > 10 | Problematic |
-
-All final model variables had VIF values close to 1, indicating no material multicollinearity.
-
----
-
-## Model Performance
-
-The final model was evaluated using AUROC, GINI and KS.
-
-### AUROC
-
-AUROC measures the model's ability to rank Bad customers as riskier than Good customers.
-
-A useful interpretation:
-
-> AUROC is the probability that a randomly selected Bad customer receives a higher predicted risk than a randomly selected Good customer.
-
-| AUROC | Interpretation |
-|---:|---|
-| 0.50 | Random model |
-| 0.60 - 0.70 | Weak |
-| 0.70 - 0.80 | Good |
-| 0.80 - 0.90 | Very good |
-| > 0.90 | Very strong; review carefully |
-
-### GINI
-
-GINI is directly derived from AUROC:
-
-\[
-GINI = 2 \times AUROC - 1
-\]
-
-### KS Statistic
-
-KS measures the maximum separation between the cumulative distribution of Goods and Bads.
-
-\[
-KS = \max(TPR - FPR)
-\]
-
-where:
-
-- \(TPR\) = true positive rate / recall
-- \(FPR\) = false positive rate
-
-Model performance:
-
-| Dataset | AUROC | GINI |
-|---|---:|---:|
-| Train | 0.8297 | 0.6594 |
-| Validation | 0.8280 | 0.6560 |
-| Test | 0.8277 | 0.6553 |
-
-KS:
-
-```text
-KS = 51.5%
-```
-
-Interpretation:
-
-- The model has strong discriminatory power.
-- Train, validation and test performance are almost identical.
-- There is no evidence of overfitting.
-
----
-
-## Confusion Matrix Analysis
-
-A confusion matrix was evaluated using an illustrative PD cut-off of 10%.
-
-Classification rule:
-
-| PD | Prediction |
-|---:|---|
-| PD >= 10% | Predicted Bad |
-| PD < 10% | Predicted Good |
-
-Confusion matrix categories:
-
-| Category | Meaning | Business Interpretation |
-|---|---|---|
-| True Negative | Good customer predicted as Good | Correct approval |
-| False Positive | Good customer predicted as Bad | Lost good customer / unnecessary rejection |
-| False Negative | Bad customer predicted as Good | Risky customer incorrectly approved |
-| True Positive | Bad customer predicted as Bad | Correct rejection of risky customer |
 
 Validation metrics at PD cut-off 10%:
 
