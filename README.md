@@ -711,16 +711,16 @@ All 10 candidate variables were binned using OptimalBinning:
 
 | # | Variable | Status | Rationale |
 |---|----------|--------|-----------|
-| 1 | RevolvingUtilizationOfUnsecuredLines | ✅ Binned | Highest IV (2.22); key utilization metric |
-| 2 | age | ✅ Binned | Very Strong IV (0.51); clear monotonic pattern |
-| 3 | NumberOfTime30-59DaysPastDueNotWorse | ✅ Binned | Very Strong IV (1.46); historical delinquency |
-| 4 | DebtRatio | ✅ Binned | Medium IV (0.16); leverage indicator |
-| 5 | MonthlyIncome | ✅ Binned | Medium IV (0.16); capacity metric |
-| 6 | NumberOfOpenCreditLinesAndLoans | ✅ Binned | Medium IV (0.17); portfolio structure |
-| 7 | NumberOfTimes90DaysLate | ✅ Binned | Very Strong IV (1.70); most severe delinquency |
-| 8 | NumberRealEstateLoansOrLines | ✅ Binned | Medium IV (0.13); collateral indicator |
-| 9 | NumberOfTime60-89DaysPastDueNotWorse | ✅ Binned | Very Strong IV (1.16); historical delinquency |
-| 10 | NumberOfDependents | ✅ Binned | Weak IV (0.07); family obligations |
+| 1 | RevolvingUtilizationOfUnsecuredLines |  Binned | Highest IV (2.22); key utilization metric |
+| 2 | age |  Binned | Very Strong IV (0.51); clear monotonic pattern |
+| 3 | NumberOfTime30-59DaysPastDueNotWorse |  Binned | Very Strong IV (1.46); historical delinquency |
+| 4 | DebtRatio |  Binned | Medium IV (0.16); leverage indicator |
+| 5 | MonthlyIncome |  Binned | Medium IV (0.16); capacity metric |
+| 6 | NumberOfOpenCreditLinesAndLoans |  Binned | Medium IV (0.17); portfolio structure |
+| 7 | NumberOfTimes90DaysLate |  Binned | Very Strong IV (1.70); most severe delinquency |
+| 8 | NumberRealEstateLoansOrLines |  Binned | Medium IV (0.13); collateral indicator |
+| 9 | NumberOfTime60-89DaysPastDueNotWorse |  Binned | Very Strong IV (1.16); historical delinquency |
+| 10 | NumberOfDependents |  Binned | Weak IV (0.07); family obligations |
 
 ### Binning Output Files
 
@@ -1763,7 +1763,7 @@ Approval/rejection policy tested at multiple score cutoffs:
 
 ---
 
-## Notebook 12 – Score Run & Fit
+## 12. Score Run & Fit
 
 Purpose:
 
@@ -1803,19 +1803,37 @@ Expected outcome:
 - Worst decile → highest bad rate
 - Best decile → lowest bad rate
 
-### Cut-Off Stability
 
-Validates:
 
-- Approval rate stability
-- Approved portfolio bad rate
-- Bad capture rate
+Decile analysis confirms the model's rank-ordering ability.
 
-Results demonstrated highly stable behaviour across all samples.
+For the validation sample:
+
+| Score Decile | Avg Score | Avg PD | Observed Bad Rate |
+|---:|---:|---:|---:|
+| 0 | 539.08 | 31.45% | 31.00% |
+| 1 | 572.24 | 11.65% | 12.73% |
+| 2 | 586.90 | 7.36% | 8.17% |
+| 3 | 600.63 | 4.70% | 4.70% |
+| 4 | 611.66 | 3.24% | 3.23% |
+| 5 | 620.00 | 2.44% | 2.73% |
+| 6 | 626.48 | 1.96% | 1.40% |
+| 7 | 632.35 | 1.61% | 1.10% |
+| 8 | 638.20 | 1.32% | 1.00% |
+| 9 | 646.06 | 1.01% | 0.77% |
+
+This shows a clear pattern:
+
+```text
+Score increases → predicted PD decreases → observed bad rate decreases
+```
+
+This is one of the most important practical validations of a scorecard.
+
 
 ---
 
-## Notebook 13 – Validation & Monitoring
+## 13. Validation & Monitoring
 
 ### Population Stability Index (PSI)
 
@@ -1868,233 +1886,6 @@ A well-calibrated model produces predicted risk levels that closely match realis
 
 ---
 
-# 
-
-
-
-Validation metrics at PD cut-off 10%:
-
-| Metric | Value | Interpretation |
-|---|---:|---|
-| Accuracy | 83.47% | Overall share of correct classifications |
-| Precision | 22.97% | Of all predicted Bad customers, share that were actually Bad |
-| Recall | 62.59% | Of all actual Bad customers, share captured by the model |
-| Specificity | 84.97% | Of all actual Good customers, share correctly classified as Good |
-| F1 | 33.61% | Harmonic mean of precision and recall |
-
-### Metric Interpretation in Credit Risk
-
-#### Accuracy
-
-\[
-Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
-\]
-
-Accuracy can be misleading in credit risk because default datasets are usually imbalanced. If the bad rate is 6.7%, a naive model that predicts everyone as Good would already achieve about 93.3% accuracy, but would identify no Bad customers.
-
-#### Precision
-
-\[
-Precision = \frac{TP}{TP + FP}
-\]
-
-Precision answers:
-
-> Of the customers flagged as Bad, how many were actually Bad?
-
-Low precision means many Good customers are being flagged as Bad. In a credit process, this may reduce approval rates and create lost business opportunities.
-
-#### Recall
-
-\[
-Recall = \frac{TP}{TP + FN}
-\]
-
-Recall answers:
-
-> Of all truly Bad customers, how many did the model capture?
-
-For this scorecard, recall is particularly important because a low recall would mean that many risky customers are incorrectly approved. This can lead to higher future credit losses.
-
-#### Specificity
-
-\[
-Specificity = \frac{TN}{TN + FP}
-\]
-
-Specificity answers:
-
-> Of all truly Good customers, how many did the model correctly classify as Good?
-
-Low specificity means the model rejects too many Good customers, which can reduce business volume and profitability.
-
-#### F1-score
-
-\[
-F1 = 2 \times \frac{Precision \times Recall}{Precision + Recall}
-\]
-
-F1 balances precision and recall. It is useful when both false approvals and false rejections are important, but in credit risk it should be interpreted together with approval rate, bad rate and business cost assumptions.
-
----
-
-## Scorecard Scaling
-
-The logistic regression output was transformed into a credit score using traditional scorecard scaling.
-
-Parameters used:
-
-| Parameter | Value | Meaning |
-|---|---:|---|
-| Base Score | 600 | Reference score level |
-| Base Odds | 20:1 | Good-to-Bad odds at base score |
-| PDO | 20 | Points to double the odds |
-
-### Odds
-
-\[
-Odds = \frac{1-PD}{PD}
-\]
-
-### Factor
-
-\[
-Factor = \frac{PDO}{\ln(2)}
-\]
-
-### Offset
-
-\[
-Offset = BaseScore - Factor \times \ln(BaseOdds)
-\]
-
-### Score Formula
-
-\[
-Score = Offset - Factor \times Logit
-\]
-
-where:
-
-\[
-Logit = \log\left(\frac{PD}{1-PD}\right)
-\]
-
-Score interpretation:
-
-- Higher score = lower risk
-- Lower score = higher risk
-- Every 20 score points approximately doubles the Good-to-Bad odds
-
-Validation score distribution:
-
-| Metric | Value |
-|---|---:|
-| Mean score | 607.36 |
-| Standard deviation | 32.54 |
-| Minimum score | 478.66 |
-| Median score | 616.44 |
-| Maximum score | 658.22 |
-
----
-
-## Cut-off Determination
-
-Cut-off analysis was performed using score values.
-
-A higher score cut-off means:
-
-- Lower approval rate
-- Lower accepted portfolio bad rate
-- More conservative credit policy
-
-A lower score cut-off means:
-
-- Higher approval rate
-- Higher accepted portfolio bad rate
-- More aggressive growth policy
-
-Validation cut-off analysis:
-
-| Cut-off | Approval Rate | Approved Portfolio Bad Rate |
-|---:|---:|---:|
-| 540 | 95.69% | 4.91% |
-| 560 | 92.46% | 4.30% |
-| 580 | 79.74% | 2.86% |
-| 600 | 65.59% | 1.93% |
-| 620 | 45.05% | 1.18% |
-| 640 | 11.91% | 0.84% |
-
-A possible operational policy is:
-
-| Score Range | Decision |
-|---|---|
-| Score < 580 | Reject |
-| 580 <= Score < 600 | Manual Review |
-| Score >= 600 | Approve |
-
-At cut-off 600, the model approves around 65.6% of applicants with an accepted portfolio bad rate of around 1.9%.
-
----
-
-## Score Run & Fit
-
-The scorecard was applied to train, validation and test samples.
-
-Score distribution:
-
-| Dataset | Mean Score | Std Score | Median Score | Bad Rate |
-|---|---:|---:|---:|---:|
-| Train | 607.48 | 32.69 | 616.89 | 6.684% |
-| Validation | 607.36 | 32.54 | 616.44 | 6.683% |
-| Test | 607.30 | 32.52 | 616.53 | 6.683% |
-
-The score distributions are highly stable across samples.
-
-At cut-off 600:
-
-| Dataset | Approval Rate | Approved Bad Rate | Bad Capture Rate |
-|---|---:|---:|---:|
-| Train | 65.77% | 1.91% | 81.18% |
-| Validation | 65.59% | 1.93% | 81.10% |
-| Test | 65.53% | 1.98% | 80.60% |
-
-Interpretation:
-
-- The proposed cut-off is stable across samples.
-- The accepted portfolio bad rate remains close to 2%.
-- The rejected population contains around 81% of all Bad customers.
-
----
-
-## Decile Analysis
-
-Decile analysis confirms the model's rank-ordering ability.
-
-For the validation sample:
-
-| Score Decile | Avg Score | Avg PD | Observed Bad Rate |
-|---:|---:|---:|---:|
-| 0 | 539.08 | 31.45% | 31.00% |
-| 1 | 572.24 | 11.65% | 12.73% |
-| 2 | 586.90 | 7.36% | 8.17% |
-| 3 | 600.63 | 4.70% | 4.70% |
-| 4 | 611.66 | 3.24% | 3.23% |
-| 5 | 620.00 | 2.44% | 2.73% |
-| 6 | 626.48 | 1.96% | 1.40% |
-| 7 | 632.35 | 1.61% | 1.10% |
-| 8 | 638.20 | 1.32% | 1.00% |
-| 9 | 646.06 | 1.01% | 0.77% |
-
-This shows a clear pattern:
-
-```text
-Score increases → predicted PD decreases → observed bad rate decreases
-```
-
-This is one of the most important practical validations of a scorecard.
-
----
 
 ## Stability Monitoring
 
